@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!-- ===== Auto cache-buster =====
+     GitHub Pages doesn't let us control HTTP cache headers, so browsers
+     (and mobile Chrome especially) can keep serving an old cached copy of
+     this page after it's updated on GitHub. This script forces every
+     plain visit (no ?_v= param yet) to redirect once to a URL with a
+     fresh timestamp, which browsers always treat as a brand-new resource
+     and fetch over the network instead of from cache. -->
+<script>
+(function(){
+  try{
+    // Only cache-bust on a real website (http/https). On a locally opened
+    // file (file:// or an Android content:// URI from Downloads/Files),
+    // rewriting the URL with a query string can fail to resolve and the
+    // page won't open at all — so skip entirely in that case.
+    if(!/^https?:$/.test(window.location.protocol)) return;
+    var url = new URL(window.location.href);
+    if(!url.searchParams.has('_v')){
+      url.searchParams.set('_v', Date.now());
+      window.location.replace(url.toString());
+    }
+  }catch(e){ /* older browsers without URL API: just skip busting */ }
+})();
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
+  }).catch(function(){});
+}
+</script>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>พิมพ์ป้ายธง (Label Print A4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=block" rel="stylesheet">
+<style>
+  :root{
+    --page-w: 210mm;
+    --page-h: 297mm;
+    --margin: 6mm;
+    --gap: 0.5mm;
+    --cols: 3;
+
+    /* ---- Design tokens ---- */
+    --ink: #10161d;          /* header bar */
+    --ink-soft: #161e27;     /* second bar, slightly lifted */
+    --ink-line: #26303b;     /* hairline on dark surfaces */
+    --ink-field: #1e2733;    /* inputs / chips on dark surfaces */
+    --surface: #eef1f5;      /* page background */
+    --card: #ffffff;
+    --border: #dde3ea;
+    --text: #1f2733;
+    --muted: #6b7684;
+    --muted-on-ink: #93a0af;
+
+    --accent: #3d63e0;       /* "create" actions (generate) */
+    --accent-ink: #ffffff;
+    --gold: #e3a73b;         /* primary CTA (print) */
+    --gold-hover: #eeb85a;
+    --gold-ink: #2a1a02;
+    --danger: #e0575c;
+    --danger-hover: #eb6d72;
+
+    --radius-sm: 7px;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --panel-header-h: 44px;
+  }
+  *{box-sizing:border-box;}
+  html{
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{
+    font-family: "Segoe UI", "Tahoma", sans-serif;
+    background:var(--surface);
+    margin:0;
+    padding:0;
+    color:var(--text);
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Removes the blue flash on tap (mobile Chrome/Safari) and the blue
+     drag-select highlight everywhere except real text inputs, where
+     selection is still expected/useful. */
+  *{-webkit-tap-highlight-color: transparent;}
+  ::selection{background:transparent;}
+  input, textarea{
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  input::selection, textarea::selection{background:rgba(61,99,224,.25);}
+  button, .manage-item, .cell, .manage-toggle-tab,
+  .manage-header, .toolbar, .autodesign, .qtyrow, .orderbadge{
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  :focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:2px;
+    border-radius:4px;
+  }
+
+  /* ============ Header (title bar) ============ */
+  .toolbar{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:var(--ink);
+    color:#fff;
+    padding:16px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    box-shadow:0 1px 0 var(--ink-line), 0 8px 20px -12px rgba(0,0,0,.5);
+    transition: padding .2s ease;
+  }
+  .toolbar h1{
+    font-size:22px;
+    margin:0;
+    font-weight:700;
+    letter-spacing:.2px;
+    transition: font-size .2s ease;
+  }
+  /* Scrolled state: header shrinks to about half height to save screen
+     space while the person is working further down the page. */
+  .toolbar.shrink{
+    padding:8px 22px;
+  }
+  .toolbar.shrink h1{
+    font-size:15px;
+  }
+
+  /* ============ Shared control styles ============ */
+  label.filebtn{
+    background:transparent;
+    color:#dfe4ea;
+    padding:9px 16px;
+    border-radius:var(--radius-sm);
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:600;
+    transition:background .15s, border-color .15s;
+    border:1px solid var(--ink-line);
+    white-space:nowrap;
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  label.filebtn:hover{background:var(--ink-field);border-color:#39434f;}
+  input[type=file]{display:none;}
+
+  button{ font-family:inherit; }
+
+  .autodesign > button, .toolbar > button{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:9px 18px;
+    border-radius:var(--radius-sm);
+    font-size:13.5px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
+    transition: filter .15s, transform .05s;
+  }
+  .autodesign > button.secondary{
+    background:transparent;
+    color:#dfe4ea;
+    border:1px solid var(--ink-line);
+  }
+  .autodesign > button.secondary:hover{background:var(--ink-field);border-color:#39434f;filter:none;}
+  .autodesign > button:hover, .toolbar > button:hover{filter:brightness(1.1);}
+  .autodesign > button:active, .toolbar > button:active{transform:translateY(1px);}
+
+  .count{
+    font-size:12.5px;
+    color:var(--muted-on-ink);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .settings{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    background:var(--ink-field);
+    padding:6px 10px;
+    border-radius:var(--radius-sm);
+  }
+  .settings input[type=number]{
+    width:55px;
+    padding:3px 5px;
+    border-radius:4px;
+    border:1px solid #999;
+  }
+
+  /* ============ Empty state ============ */
+  .empty-hint{
+    text-align:center;
+    padding:64px 28px;
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.7;
+    width:100%;
+    align-self:stretch;
+    max-width:520px;
+    margin:24px auto 0;
+    background:var(--card);
+    border:1.5px dashed #c9d2dc;
+    border-radius:var(--radius-lg);
+  }
+  .empty-hint::before{
+    content:"🏳️";
+    display:block;
+    font-size:30px;
+    margin-bottom:10px;
+  }
+
+  /* ============ Layout ============ */
+  .layout-flex{
+    display:flex;
+    align-items:flex-start;
+    position:relative;
+  }
+  .manage{
+    flex:0 0 250px;
+    width:250px;
+    display:flex;
+    flex-direction:column;
+    background:#e4e8ed;
+    border-right:1px solid var(--border);
+    position:sticky;
+    top:var(--header-h, 108px);
+    height:calc(100vh - var(--header-h, 108px));
+    /* Must stay visible (not hidden) even while OPEN: .manage-toggle-tab
+       is a real child of .manage-header that intentionally renders just
+       outside .manage's own box (left:100% of the header). overflow:hidden
+       here would clip that protruding tab away entirely the moment the
+       sidebar opens on desktop — .manage-list has its own overflow-y:auto
+       for scrolling, so nothing here actually needs clipping. */
+    overflow:visible;
+    z-index:20;
+    transition: flex-basis .22s ease, width .22s ease, opacity .18s ease;
+    /* .manage's sticky `top` is bound to --header-h, which JS updates
+       dynamically (header-shrink-on-scroll, ResizeObserver). Chrome on
+       Android has a known repaint bug where a sticky element's `top`
+       changing doesn't fully invalidate its old painted position, leaving
+       a ghost copy of the header floating where it used to sit — this is
+       exactly the duplicate "รายการ" bar that appears over the page area
+       after toggling the sidebar (the toggle changes .manage's box, which
+       is enough to trigger it while --header-h is also in flux). Forcing
+       this element onto its own compositing layer makes the browser
+       repaint it correctly whenever `top` changes instead of leaving the
+       stale copy behind. */
+    transform: translateZ(0);
+    will-change: top;
+  }
+  .manage-list{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:14px;
+  }
+  /* Collapsed state (desktop push-layout): shrink to nothing instead of
+     overlapping the page preview next to it (overflow:visible now lives
+     on the base .manage rule above, so .manage-toggle-tab stays visible/
+     clickable in both states — it's the only way to reopen the panel).
+     Its width collapses to 0 along with the header's, which is exactly
+     what leaves the tab (positioned at the header's left:100%) sitting
+     flush at x:0. Only the header's own label and the list are hidden
+     individually, below. */
+  .manage:not(.open){
+    flex-basis:0;
+    width:0;
+    border-right:none;
+  }
+  /* white-space:nowrap is the important part here: without it, squeezing
+     the label to width:0 lets the Thai text + emoji wrap character-by-
+     character into a tall vertical stack, which inflates .manage-header's
+     own height — and since .manage-toggle-tab is height:100% of that
+     header, the tab visibly ballooned along with it. nowrap keeps the
+     label a single line (still fully clipped/invisible via overflow:
+     hidden + opacity:0), so the header — and the tab — stay a fixed,
+     correct height in both states. */
+  .manage:not(.open) .manage-header-label{
+    opacity:0;
+    pointer-events:none;
+    width:0;
+    overflow:hidden;
+    white-space:nowrap;
+  }
+  /* The header's own left/right padding (12px 14px) keeps its rendered
+     width at ~28px even once its only visible content (the label above)
+     is squeezed to width:0 — padding alone still occupies box width.
+     Since .manage-toggle-tab is positioned at left:100% of THIS header
+     (not of .manage), that leftover 28px pushes the tab 28px further
+     right than intended, so it protrudes past .manage's true x:0 edge
+     on desktop. Zeroing just the horizontal padding here (vertical stays,
+     so height/min-height is unaffected) collapses the header to a true
+     0px width, landing the tab flush at x:0 as the desktop-closed comment
+     above intends. */
+  .manage:not(.open) .manage-header{
+    padding-left:0;
+    padding-right:0;
+  }
+  .manage:not(.open) .manage-list{
+    opacity:0;
+    pointer-events:none;
+  }
+  .sidebar-backdrop{
+    display:none;
+    position:fixed;
+    top:0; right:0; bottom:0; left:0;
+    background:rgba(6,9,13,.62);
+    z-index:9996;
+  }
+  .sidebar-backdrop.show{display:block;}
+  /* On narrow screens the sidebar is too wide to sit next to the A4
+     preview without squeezing/overlapping it, so it becomes a slide-in
+     drawer that floats over the page instead of sharing width with it. */
+  @media (max-width:768px){
+    .manage{
+      position:fixed;
+      left:0;
+      top:var(--header-h, 108px);
+      height:calc(100vh - var(--header-h, 108px));
+      max-height:none;
+      width:250px;
+      max-width:80vw;
+      z-index:9997;
+      overflow:visible;
+      box-shadow:2px 0 20px rgba(0,0,0,.35);
+      transform:translateX(-100%);
+      transition: transform .22s ease;
+    }
+    .manage.open{
+      transform:translateX(0);
+    }
+    /* width/max-width MUST be restated here even though the desktop rule
+       above already sets them on .manage — that desktop
+       `.manage:not(.open){width:0}` rule has the SAME specificity as this
+       one (both are `.manage:not(.open)`), so without an explicit width
+       here too, the desktop rule's width:0 leaks through by cascade order
+       and breaks everything below: translateX(-100%) of a 0-width box is
+       a 0px shift, so the "closed" panel wouldn't move off-canvas at all
+       — it would just sit there at full size, looking like it "protrudes"
+       into the content. Restating the real 250px width here is what makes
+       -100% translate the correct ~250px and land the tab flush at the
+       screen edge. */
+    .manage:not(.open){
+      transform:translateX(-100%);
+      width:250px;
+      max-width:80vw;
+    }
+    /* No separate edge-tab rule needed here: .manage-toggle-tab is an
+       in-flow child of .manage-header, so the same transform that slides
+       the whole panel off-canvas carries the tab along with it — it lands
+       exactly at the screen's left edge (see the comment on
+       .manage-toggle-tab below), never a separate calculation to keep in
+       sync. */
+  }
+  /* Protrudes from the header's own right edge like a tab, anchored via
+     plain position:absolute against .manage-header (a normal in-flow
+     ancestor) — never position:fixed, and never a second, separate
+     element. This is the ONE toggle button, used for both the open and
+     closed states, on both desktop and mobile. It has no motion of its
+     own to animate: it moves only because the header — and the panel
+     it's physically part of — moves, so it is structurally impossible
+     for it to separate or lag behind:
+       - Desktop open: .manage is 250px wide, so left:100% puts the tab
+         flush against the panel's real right edge.
+       - Desktop closed: .manage collapses to width:0, so left:100% (of
+         zero) puts the tab flush at x:0 — no --sidebar-w variable or
+         resize syncing required, it fully self-computes from the header's
+         actual box.
+       - Mobile: the whole panel (tab included, since it's a rendered part
+         of the same transformed box) slides via translateX. Open lands
+         the tab at the panel's right edge; closed lands it exactly at
+         the screen's left edge — the translate carries the tab with it
+         either way. */
+  .manage-header{position:relative;}
+  .manage-toggle-tab{
+    position:absolute;
+    top:0;
+    left:100%;
+    width:24px;
+    height:100%;
+    border-radius:0 var(--radius) var(--radius) 0;
+    background:var(--ink);
+    color:#dfe4ea;
+    border:1px solid var(--ink);
+    border-left:none;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:1px 2px 6px rgba(0,0,0,.18);
+    padding:0;
+    z-index:5;
+  }
+  .manage-toggle-tab:hover{background:var(--ink-field);}
+  .manage-header{
+    flex-shrink:0;
+    min-height:var(--panel-header-h);
+    padding:12px 14px;
+    background:var(--ink);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:13.5px;
+    font-weight:700;
+    letter-spacing:.2px;
+  }
+  /* ============ Flag list cards ============ */
+  .manage-item{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:10px;
+    width:100%;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    box-shadow:0 1px 2px rgba(16,22,29,.06);
+    flex-shrink:0;
+    transition: box-shadow .15s, border-color .15s;
+  }
+  .manage-item:hover{
+    box-shadow:0 4px 14px rgba(16,22,29,.12);
+    border-color:#c7d0db;
+  }
+  .manage-item .orderbadge{
+    position:absolute;
+    top:-9px;
+    left:-9px;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--ink);
+    color:#fff;
+    font-size:11.5px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+    z-index:1;
+  }
+  .manage-item img{
+    width:100%;
+    height:60px;
+    object-fit:contain;
+    border:1px solid #eef0f3;
+    border-radius:6px;
+    background:#fafbfc;
+  }
+  .manage-item .qtyrow{
+    display:flex;
+    align-items:center;
+    gap:0;
+    font-size:13px;
+    border:1px solid var(--border);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .manage-item .qtyrow button{
+    width:26px;
+    height:26px;
+    border:none;
+    background:#f1f3f6;
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+    padding:0;
+    color:var(--text);
+    transition:background .12s;
+  }
+  .manage-item .qtyrow button:hover{background:#e4e8ed;}
+  .manage-item .qtyrow input{
+    width:38px;
+    text-align:center;
+    padding:3px 2px;
+    border:none;
+    border-left:1px solid var(--border);
+    border-right:1px solid var(--border);
+    font-size:13px;
+  }
+  .manage-item .delbtn{
+    background:transparent;
+    color:var(--danger);
+    border:none;
+    font-size:12px;
+    font-weight:600;
+    padding:2px 4px;
+    cursor:pointer;
+    transition:color .12s;
+  }
+  .manage-item .delbtn:hover{color:var(--danger-hover);text-decoration:underline;}
+
+  /* ============ Page preview area ============ */
+  .pages{
+    position:relative;
+    z-index:0;
+    flex:1;
+    min-width:0;
+    padding:26px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:24px;
+  }
+  .page{
+    background:#fff;
+    width:var(--page-w);
+    height:var(--page-h);
+    box-shadow:0 2px 4px rgba(16,22,29,.08), 0 12px 28px -10px rgba(16,22,29,.22);
+    padding:var(--margin);
+    display:grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap:var(--gap);
+    align-content:start;
+    position:relative;
+    border-radius:2px;
+  }
+  .page .pagenum{
+    position:absolute;
+    bottom:2mm;
+    right:4mm;
+    font-size:8px;
+    color:#ccc;
+  }
+  .cell{
+    position:relative;
+    overflow:hidden;
+    border:1px dashed #ccd3da;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .cell img{
+    width:100%;
+    height:100%;
+    object-fit:fill;
+    display:block;
+  }
+  .cell .remove{
+    position:absolute;
+    top:3px;
+    right:3px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:rgba(224,87,92,.9);
+    color:#fff;
+    border:none;
+    font-size:13px;
+    line-height:20px;
+    text-align:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .cell:hover .remove{display:block;}
+  .cell .remove{display:none;}
+
+  /* ============ Second bar: build / actions ============ */
+  .autodesign{
+    position:sticky;
+    top:var(--toolbar-h, 46px);
+    z-index:9;
+    background:var(--ink-soft);
+    border-top:1px solid var(--ink-line);
+    box-shadow:0 1px 0 var(--ink-line);
+    color:#fff;
+    padding:11px 22px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ad-group{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+  }
+  /* Pushes everything after it (import / clear / print) to the right edge
+     of the bar, so output actions are visually separated from the
+     content-building controls on the left. */
+  .ad-group.--actions{
+    margin-left:auto;
+    padding-left:14px;
+    border-left:1px solid var(--ink-line);
+  }
+  .autodesign .adlabel{
+    font-size:13.5px;
+    font-weight:600;
+    color:#dfe4ea;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .autodesign input[type=text]{
+    width:100%;
+    padding:9px 11px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--ink-line);
+    background:var(--ink-field);
+    color:#fff;
+    font-size:14px;
+  }
+  .autodesign input[type=text]::placeholder{color:#7c8794;}
+  .autodesign input[type=text]:focus{
+    outline:none;
+    border-color:var(--accent);
+    background:#20293a;
+  }
+  .ac-wrap{
+    position:relative;
+    flex:0 0 220px;
+  }
+  .ac-dropdown{
+    display:none;
+    position:fixed;
+    margin-top:4px;
+    background:#1c232c;
+    border:1px solid var(--ink-line);
+    border-radius:var(--radius-sm);
+    max-height:260px;
+    overflow-y:auto;
+    /* Now a direct child of <body> (see markup), so this competes at the
+       top-level stacking context against .manage (z-index:20) instead of
+       being trapped inside .autodesign's own context — needs to clear
+       every other floating layer on the page (sidebar, its backdrop). */
+    z-index:10000;
+    box-shadow:0 10px 24px rgba(0,0,0,.5);
+  }
+  .ac-dropdown.show{display:block;}
+  .ac-item{
+    padding:8px 12px;
+    font-size:14px;
+    color:#e9ecef;
+    cursor:pointer;
+  }
+  .ac-item mark{
+    background:transparent;
+    color:var(--gold);
+    font-weight:700;
+  }
+  .ac-item:hover,
+  .ac-item.active{
+    background:#2a3340;
+  }
+  #genBtn{
+    background:var(--gold);
+    color:var(--gold-ink);
+    border:none;
+    padding:9px 18px;
+    border-radius:var(--radius-sm);
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+    box-shadow:0 4px 12px -4px rgba(227,167,59,.55);
+    transition:filter .15s, transform .05s, box-shadow .15s;
+  }
+  #genBtn:hover{background:var(--gold-hover);box-shadow:0 6px 16px -4px rgba(227,167,59,.7);}
+  #genBtn:active{transform:translateY(1px);}
+  #genBtn:disabled{opacity:.55;cursor:default;filter:none;}
+  .redslider-wrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--ink-field);
+    padding:6px 12px;
+    border-radius:var(--radius-sm);
+    flex-shrink:0;
+  }
+  .redslider-wrap .adlabel{
+    color:#f0a3a5;
+  }
+  .redslider-wrap input[type=range]{
+    width:110px;
+    accent-color:var(--danger);
+    cursor:pointer;
+  }
+  .redslider-wrap span#redBoostValue{
+    font-size:13px;
+    color:var(--muted-on-ink);
+    width:26px;
+    text-align:right;
+    flex-shrink:0;
+  }
+  .autodesign .genstatus{
+    font-size:12.5px;
+    color:var(--muted-on-ink);
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  /* Primary action, always the right-most control in the bar */
+  #printBtn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 22px;
+    border-radius:var(--radius-sm);
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+    transition:filter .15s, transform .05s;
+  }
+  #printBtn:hover{filter:brightness(1.12);}
+  #printBtn:active{transform:translateY(1px);}
+
+  @media print{
+    body{background:#fff;}
+    .toolbar{display:none;}
+    .autodesign{display:none;}
+    .manage{display:none;}
+    .sidebar-backdrop{display:none;}
+    .ac-dropdown{display:none;}
+    .empty-hint{display:none;}
+    .pages{padding:0;gap:0;}
+    .page{
+      box-shadow:none;
+      margin:0;
+      page-break-after: always;
+      border:none;
+    }
+    .cell{border:1px dashed #aaa;}
+    .cell .remove{display:none !important;}
+    .pagenum{display:none;}
+  }
+  @page{
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>🏷️ Flag Lable Printer</h1>
+</div>
+
+<div class="autodesign">
+  <div class="ad-group">
+    <span class="adlabel">🎨 พิมพ์ชื่อประเทศ:</span>
+    <div class="ac-wrap">
+      <input type="text" id="countryInput" placeholder="พิมพ์ชื่อประเทศ เช่น Brazil, Thailand" autocomplete="off">
+    </div>
+    <button id="genBtn">✨ สร้างป้าย</button>
+
+    <div class="redslider-wrap">
+      <span class="adlabel">🔴 ความเข้มสีแดง:</span>
+      <input type="range" id="redBoostSlider" min="0" max="100" value="70">
+      <span id="redBoostValue">70</span>
+    </div>
+    <span class="genstatus" id="genStatus" style="display:none;"></span>
+  </div>
+
+  <div class="ad-group --actions">
+    <label class="filebtn">
+      📁 Custom Flag
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </label>
+    <span class="count" id="countText" style="display:none;">ยังไม่มีรูป</span>
+    <button class="secondary" id="clearBtn">ล้างทั้งหมด</button>
+    <button id="printBtn">🖨️ พิมพ์</button>
+  </div>
+</div>
+
+<div class="layout-flex">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="manage" id="manageWrap">
+    <div class="manage-header">
+      <span class="manage-header-label">📋 รายการ</span>
+      <button type="button" id="sidebarToggleTab" class="manage-toggle-tab" aria-label="เปิด/ปิดรายการ" aria-expanded="true">‹</button>
+    </div>
+    <div class="manage-list" id="manageList"></div>
+  </div>
+  <div class="pages" id="pages">
+    <div id="emptyHint" class="empty-hint">
+      ยังไม่มีรูปภาพ — กดปุ่ม "เลือกรูปภาพ" ด้านบนเพื่อนำเข้ารูปป้ายธง (เลือกได้หลายไฟล์พร้อมกัน)<br>
+      หลังนำเข้าแล้วสามารถแก้ไข "จำนวนดวง" ของแต่ละรูปได้จากแผงด้านล่างนี้ ระบบจะจัดวาง 3 ดวงต่อแถว เต็มความยาวหน้ากระดาษ A4 แนวตั้งโดยอัตโนมัติ
+      ความสูงของแต่ละดวงคำนวณตามสัดส่วนภาพต้นฉบับ
+    </div>
+  </div>
+</div>
+
+<!-- Lives at the body level, outside .autodesign and .manage, on purpose:
+     .autodesign is its own stacking context (position:sticky + z-index),
+     so a z-index set on a descendant only wins fights *inside* that
+     context — it can never out-rank .manage's z-index:20 sitting next to
+     it. Being a direct body child lets this dropdown's z-index compete
+     directly at the top level instead, so it always draws above the
+     sidebar. Position/size are still computed in JS (acPositionDropdown)
+     off of #countryInput's real on-screen position, so moving it here
+     changes nothing about where it appears. -->
+<div class="ac-dropdown" id="acDropdown"></div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const pagesEl = document.getElementById('pages');
+const emptyHint = document.getElementById('emptyHint');
+const countText = document.getElementById('countText');
+const clearBtn = document.getElementById('clearBtn');
+const printBtn = document.getElementById('printBtn');
+const manageList = document.getElementById('manageList');
+const manageWrap = document.getElementById('manageWrap');
+const countryInput = document.getElementById('countryInput');
+const acDropdown = document.getElementById('acDropdown');
+const genBtn = document.getElementById('genBtn');
+const redBoostSlider = document.getElementById('redBoostSlider');
+const redBoostValue = document.getElementById('redBoostValue');
+redBoostSlider.addEventListener('input', () => {
+  redBoostValue.textContent = redBoostSlider.value;
+});
+const genStatus = document.getElementById('genStatus');
+
+// Static offline list of common country names for the autocomplete dropdown
+// (doesn't depend on the countries.dev API being reachable while typing).
+const COUNTRY_NAMES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+  "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
+  "Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria",
+  "Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada",
+  "Central African Republic","Chad","Chile","China","Colombia","Comoros",
+  "Congo","Costa Rica","Croatia","Cuba","Cyprus","Czechia","DR Congo",
+  "Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt",
+  "El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini",
+  "Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany",
+  "Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
+  "Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq",
+  "Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan",
+  "Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia",
+  "Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania",
+  "Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta",
+  "Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia",
+  "Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique",
+  "Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand",
+  "Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway",
+  "Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea",
+  "Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania",
+  "Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia",
+  "Saint Vincent and the Grenadines","Samoa","San Marino",
+  "Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles",
+  "Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands",
+  "Somalia","South Africa","South Korea","South Sudan","Spain",
+  "Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan",
+  "Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+  "Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu",
+  "Uganda","Ukraine","United Arab Emirates","United Kingdom","USA",
+  "Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam",
+  "Yemen","Zambia","Zimbabwe"
+];
+
+let acActiveIndex = -1;
+let acMatches = [];
+
+function acEscapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function acPositionDropdown(){
+  const r = countryInput.getBoundingClientRect();
+  acDropdown.style.left = r.left + 'px';
+  acDropdown.style.top = (r.bottom + 4) + 'px';
+  acDropdown.style.width = r.width + 'px';
+}
+
+function acRender(query){
+  const q = query.trim().toLowerCase();
+  if(!q){ acHide(); return; }
+  const starts = [], contains = [];
+  for(const name of COUNTRY_NAMES){
+    const idx = name.toLowerCase().indexOf(q);
+    if(idx === 0) starts.push(name);
+    else if(idx > 0) contains.push(name);
+  }
+  acMatches = [...starts, ...contains].slice(0, 8);
+  acActiveIndex = -1;
+  if(acMatches.length === 0){ acHide(); return; }
+
+  acDropdown.innerHTML = acMatches.map(name => {
+    const idx = name.toLowerCase().indexOf(q);
+    const highlighted = idx === -1 ? acEscapeHtml(name) :
+      acEscapeHtml(name.slice(0, idx)) + '<mark>' + acEscapeHtml(name.slice(idx, idx + q.length)) + '</mark>' + acEscapeHtml(name.slice(idx + q.length));
+    return `<div class="ac-item" data-name="${acEscapeHtml(name)}">${highlighted}</div>`;
+  }).join('');
+  acPositionDropdown();
+  acDropdown.classList.add('show');
+}
+
+function acHide(){
+  acDropdown.classList.remove('show');
+  acDropdown.innerHTML = '';
+  acMatches = [];
+  acActiveIndex = -1;
+}
+
+function acSetActive(index){
+  const items = acDropdown.querySelectorAll('.ac-item');
+  items.forEach(el => el.classList.remove('active'));
+  if(index >= 0 && index < items.length){
+    items[index].classList.add('active');
+    items[index].scrollIntoView({ block: 'nearest' });
+  }
+  acActiveIndex = index;
+}
+
+function acChoose(name){
+  countryInput.value = name;
+  acHide();
+  countryInput.focus();
+}
+
+countryInput.addEventListener('input', () => acRender(countryInput.value));
+countryInput.addEventListener('focus', () => { if(countryInput.value.trim()) acRender(countryInput.value); });
+
+acDropdown.addEventListener('mousedown', (e) => {
+  const item = e.target.closest('.ac-item');
+  if(item) acChoose(item.dataset.name);
+});
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.ac-wrap') && !e.target.closest('.ac-dropdown')) acHide();
+});
+
+// Keep the dropdown anchored to the input if the toolbar row (or page) scrolls/resizes.
+document.querySelector('.autodesign').addEventListener('scroll', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+});
+window.addEventListener('scroll', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+}, true);
+window.addEventListener('resize', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+});
+
+
+let images = []; // {id, src, ratio, qty}
+let nextId = 1;
+
+/* ===================== Auto Flag Label Designer =====================
+   Replicates the reference design (see "Product of RUSSIA" sample):
+   - Flag photo tilted ~-6° and cropped by the natural rotated silhouette
+     against a black background (no extra clip mask needed).
+   - "Product" / "of" stacked in bold white, then the country name in
+     large bold red with a white outline — all three lines right-aligned
+     to the same right margin so long names shrink-to-fit instead of
+     overflowing the label.
+======================================================================= */
+const FLAG_LABEL_W = 980;
+const FLAG_LABEL_H = 429;
+const FLAG_TILT_DEG = -5.95; // matches the rotation used in the reference labels
+
+function loadImageEl(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('flag image failed to load'));
+    img.src = src;
+  });
+}
+
+// Many flag source PNGs render "red" as a muted brick/maroon tone rather
+// than a true vivid red. This selectively punches up ONLY the reddish
+// pixels (red channel clearly dominant over green/blue) so flag reds print
+// vivid, while leaving whites, blues, greens, yellows, and blacks
+// untouched — unlike a global saturation/contrast filter which skews every
+// color at once. `level` (0-100, from the red-intensity slider) controls
+// how strong the boost is: 0 = untouched original, 100 = maximum punch.
+function boostFlagReds(img, level){
+  const off = document.createElement('canvas');
+  off.width = img.naturalWidth;
+  off.height = img.naturalHeight;
+  const octx = off.getContext('2d');
+  octx.drawImage(img, 0, 0);
+
+  if(!level || level <= 0) return off; // slider at 0: leave colors as-is
+
+  const t = Math.max(0, Math.min(100, level)) / 100;
+  const rMult = 1 + t * 0.45;   // up to 1.45x red at level 100
+  const gbMult = 1 - t * 0.70;  // down to 0.30x green/blue at level 100
+
+  const idata = octx.getImageData(0, 0, off.width, off.height);
+  const d = idata.data;
+  for(let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    // Only touch pixels where red is clearly the dominant channel
+    // (i.e. actually a "red" pixel, not orange/pink/skin-ish tones).
+    if(r > g + 25 && r > b + 25){
+      d[i] = Math.min(255, r * rMult);
+      d[i + 1] = g * gbMult;
+      d[i + 2] = b * gbMult;
+    }
+  }
+  octx.putImageData(idata, 0, 0);
+  return off;
+}
+
+// countries.dev only exposes one "name" field, and for a number of
+// countries that's the long official/formal name (e.g. "Lao People's
+// Democratic Republic", "Russian Federation") rather than the short common
+// name people actually put on a product label ("Laos", "Russia"). This maps
+// those official names down to the common short name for the label text —
+// the API is still used as-is for search/matching and the flag code.
+const COMMON_NAME_OVERRIDES = {
+  "united states of america": "USA",
+  "russian federation": "Russia",
+  "lao people's democratic republic": "Laos",
+  "republic of korea": "South Korea",
+  "democratic people's republic of korea": "North Korea",
+  "united kingdom of great britain and northern ireland": "United Kingdom",
+  "islamic republic of iran": "Iran",
+  "iran (islamic republic of)": "Iran",
+  "bolivarian republic of venezuela": "Venezuela",
+  "plurinational state of bolivia": "Bolivia",
+  "syrian arab republic": "Syria",
+  "socialist republic of vietnam": "Vietnam",
+  "brunei darussalam": "Brunei",
+  "united republic of tanzania": "Tanzania",
+  "democratic republic of the congo": "DR Congo",
+  "republic of the congo": "Congo",
+  "kingdom of the netherlands": "Netherlands",
+  "federal democratic republic of ethiopia": "Ethiopia",
+  "federal republic of nigeria": "Nigeria",
+  "arab republic of egypt": "Egypt",
+  "kingdom of saudi arabia": "Saudi Arabia",
+  "united mexican states": "Mexico",
+  "federative republic of brazil": "Brazil",
+  "argentine republic": "Argentina",
+  "people's republic of china": "China",
+  "republic of the union of myanmar": "Myanmar",
+  "independent state of papua new guinea": "Papua New Guinea",
+  "hellenic republic": "Greece",
+  "swiss confederation": "Switzerland",
+  "kingdom of thailand": "Thailand",
+  "republic of india": "India",
+  "republic of indonesia": "Indonesia",
+  "republic of the philippines": "Philippines",
+  "co-operative republic of guyana": "Guyana",
+  "oriental republic of uruguay": "Uruguay",
+  "republic of poland": "Poland",
+  "italian republic": "Italy",
+  "portuguese republic": "Portugal",
+  "kingdom of spain": "Spain",
+  "french republic": "France",
+  "federal republic of germany": "Germany",
+  "kingdom of belgium": "Belgium",
+  "republic of austria": "Austria",
+  "czech republic": "Czechia",
+  "slovak republic": "Slovakia",
+  "republic of ireland": "Ireland",
+  "grand duchy of luxembourg": "Luxembourg",
+  "principality of monaco": "Monaco",
+  "republic of iraq": "Iraq",
+  "state of israel": "Israel",
+  "hashemite kingdom of jordan": "Jordan",
+  "republic of turkey": "Turkey",
+  "republic of south africa": "South Africa",
+  "commonwealth of australia": "Australia",
+  "new zealand": "New Zealand",
+  "japan": "Japan",
+  "republic of chile": "Chile",
+  "republic of colombia": "Colombia",
+  "republic of peru": "Peru",
+  "republic of ecuador": "Ecuador",
+  "republic of paraguay": "Paraguay",
+  "republic of cuba": "Cuba",
+  "dominican republic": "Dominican Republic",
+  "republic of panama": "Panama",
+  "republic of costa rica": "Costa Rica",
+  "republic of guatemala": "Guatemala",
+  "republic of honduras": "Honduras",
+  "republic of el salvador": "El Salvador",
+  "republic of nicaragua": "Nicaragua"
+};
+
+function toCommonName(officialName){
+  const lower = officialName.toLowerCase();
+  if(COMMON_NAME_OVERRIDES[lower]) return COMMON_NAME_OVERRIDES[lower];
+  // Generic fallback for names the override table doesn't explicitly
+  // cover: countries.dev often formats these as "Name (Qualifier)" or
+  // "Name, Qualifier" — e.g. "Iran (Islamic Republic of)" — where the
+  // leading part is already the short common name people expect.
+  const parenIdx = officialName.indexOf(' (');
+  if(parenIdx > 0) return officialName.slice(0, parenIdx);
+  const commaIdx = officialName.indexOf(', ');
+  if(commaIdx > 0) return officialName.slice(0, commaIdx);
+  return officialName;
+}
+
+// countries.dev's search does a plain substring match against each
+// country's stored (often long official) name — e.g. "Laos" fails because
+// it isn't a literal substring of "Lao People's Democratic Republic".
+// For every common name known to trip this up, skip the search entirely
+// and resolve straight to the ISO code + a clean display label.
+const ALIAS_TO_CODE = {
+  'laos': { code: 'la', label: 'Laos' },
+  'iran': { code: 'ir', label: 'Iran' },
+  'usa': { code: 'us', label: 'USA' },
+  'united states': { code: 'us', label: 'USA' },
+  'united states of america': { code: 'us', label: 'USA' },
+  'south korea': { code: 'kr', label: 'South Korea' },
+  'north korea': { code: 'kp', label: 'North Korea' },
+  'dr congo': { code: 'cd', label: 'DR Congo' },
+  'democratic republic of the congo': { code: 'cd', label: 'DR Congo' },
+  'czechia': { code: 'cz', label: 'Czechia' },
+  'czech republic': { code: 'cz', label: 'Czechia' },
+  'mexico': { code: 'mx', label: 'Mexico' },
+  'argentina': { code: 'ar', label: 'Argentina' },
+  'greece': { code: 'gr', label: 'Greece' },
+  'switzerland': { code: 'ch', label: 'Switzerland' },
+  'italy': { code: 'it', label: 'Italy' },
+  'portugal': { code: 'pt', label: 'Portugal' },
+  'france': { code: 'fr', label: 'France' },
+  'slovakia': { code: 'sk', label: 'Slovakia' },
+  'ivory coast': { code: 'ci', label: 'Ivory Coast' },
+  "cote d'ivoire": { code: 'ci', label: 'Ivory Coast' },
+  "côte d'ivoire": { code: 'ci', label: 'Ivory Coast' },
+  'vatican city': { code: 'va', label: 'Vatican City' },
+  'holy see': { code: 'va', label: 'Vatican City' },
+};
+
+async function resolveCountry(query){
+  // restcountries.com's old free v3.1 endpoint was retired, so this uses
+  // countries.dev — a free, keyless, CORS-open replacement with the same data.
+  const q = query.trim();
+  if(!q) throw new Error('empty query');
+  const alias = ALIAS_TO_CODE[q.toLowerCase()];
+  if(alias) return { code: alias.code, label: alias.label };
+  const res = await fetch(`https://countries.dev/name/${encodeURIComponent(q)}`);
+  if(!res.ok) throw new Error('country not found');
+  const data = await res.json();
+  if(!Array.isArray(data) || data.length === 0) throw new Error('country not found');
+  const lower = q.toLowerCase();
+  const match = data.find(d => d.name && d.name.toLowerCase() === lower) || data[0];
+  if(!match.alpha2Code) throw new Error('country code missing');
+  return { code: match.alpha2Code.toLowerCase(), label: toCommonName(match.name) };
+}
+
+// Fit the country name at a fixed TARGET font size — matching the reference
+// "Product of RUSSIA" sample — no matter how long the name is. Long names
+// are simply allowed to extend left and overlap the flag artwork (matching
+// the reference examples like "PHILIPPINES"/"GUATEMALA") rather than being
+// squeezed or shrunk. Only names too wide to fit across the whole label
+// (e.g. "TRINIDAD AND TOBAGO") wrap onto a second line.
+function fitCountryLines(ctx, text, canvasWidth, targetFont, fontStack){
+  ctx.font = `900 ${targetFont}px ${fontStack}`;
+  const maxLineWidth = canvasWidth * 0.98;
+  const w = ctx.measureText(text).width;
+  if(w <= maxLineWidth){
+    return { lines: [text], font: targetFont };
+  }
+
+  // Too wide for even the full label width: wrap to two lines. Split on a
+  // space if there is one; otherwise split the single word roughly in half.
+  let l1, l2, splitW;
+  if(text.includes(' ')){
+    const words = text.split(' ');
+    let best = null;
+    for(let i = 1; i < words.length; i++){
+      const a = words.slice(0, i).join(' ');
+      const b = words.slice(i).join(' ');
+      const w2 = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+      if(!best || w2 < best.w) best = { a, b, w: w2 };
+    }
+    l1 = best.a; l2 = best.b; splitW = best.w;
+  } else {
+    const mid = Math.ceil(text.length / 2);
+    l1 = text.slice(0, mid);
+    l2 = text.slice(mid);
+    splitW = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width);
+  }
+
+  // Only shrink the font if the split lines are literally too wide for the
+  // label (e.g. one very long word with no space to split on). Otherwise
+  // keep the full target size — the overlap is fixed purely by giving the
+  // two baselines enough vertical spacing (see createFlagLabelDataUrl).
+  let font2 = targetFont;
+  if(splitW > maxLineWidth) font2 = targetFont * (maxLineWidth / splitW);
+
+  return { lines: [l1, l2], font: font2 };
+}
+
+function createFlagLabelDataUrl(flagImg, countryLabel, fontStack){
+  const CW = FLAG_LABEL_W, CH = FLAG_LABEL_H;
+  const canvas = document.createElement('canvas');
+  canvas.width = CW;
+  canvas.height = CH;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // --- Tilted flag photo (naturally clipped by its own rotated silhouette) ---
+  const rectW = CW * 0.564;
+  const rectH = CH * 0.862;
+  const cx = CW * 0.28;
+  const cy = CH * 0.44;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(FLAG_TILT_DEG * Math.PI / 180);
+  ctx.beginPath();
+  ctx.rect(-rectW / 2, -rectH / 2, rectW, rectH);
+  ctx.clip();
+  const flagSrc = boostFlagReds(flagImg, parseInt(redBoostSlider.value, 10));
+  const iw = flagSrc.width, ih = flagSrc.height;
+  const scale = Math.max(rectW / iw, rectH / ih);
+  const dw = iw * scale, dh = ih * scale;
+  ctx.drawImage(flagSrc, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+
+  // --- Right-aligned text stack: Product / of / COUNTRY ---
+  const rightEdge = CW * 0.98;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+
+  // Target font tuned to match the reference "Product of RUSSIA" sample.
+  // Long names are allowed to overlap the flag artwork rather than being
+  // squeezed or shrunk (per the reference examples).
+  const { lines, font } = fitCountryLines(
+    ctx, countryLabel.toUpperCase(), CW, CH * 0.30, fontStack
+  );
+  const twoLines = lines.length === 2;
+
+  // When the name wraps to two lines, push "Product / of" up so the whole
+  // stack stays balanced and doesn't crowd the taller two-line name below.
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 ${Math.round(CH * 0.21)}px Arial, "Segoe UI", sans-serif`;
+  ctx.fillText('Product', rightEdge, twoLines ? CH * 0.20 : CH * 0.33);
+  ctx.fillText('of', rightEdge, twoLines ? CH * 0.415 : CH * 0.565);
+
+  ctx.font = `900 ${font}px ${fontStack}`;
+  ctx.lineWidth = font * 0.09;
+  ctx.strokeStyle = '#fff';
+  ctx.fillStyle = '#F60000';
+  ctx.lineJoin = 'round';
+
+  // For 2 lines, anchor the bottom line near the label's bottom edge and
+  // push the top line up just far enough (0.85x font, roughly one cap-height)
+  // that the tall Anton caps of line 2 don't collide with line 1 — without
+  // shrinking the font itself.
+  const baseline2 = CH * 0.92;
+  const baseline1 = baseline2 - font * 0.85;
+  const baselines = twoLines ? [baseline1, baseline2] : [CH * 0.912];
+  lines.forEach((line, i) => {
+    ctx.strokeText(line, rightEdge, baselines[i]);
+    ctx.fillText(line, rightEdge, baselines[i]);
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+async function handleGenerateFlagLabel(){
+  const q = countryInput.value.trim();
+  if(!q) return;
+  const originalBtnText = genBtn.textContent;
+  genBtn.disabled = true;
+  genBtn.textContent = '⏳ กำลังสร้าง...';
+  genStatus.style.color = '#ced4da';
+  genStatus.textContent = '';
+  try{
+    // Try to fully download the Roboto Black web font before drawing text
+    // to the canvas. On networks that block/slow fonts.googleapis.com or
+    // fonts.gstatic.com (common on Thai office/school Wi-Fi, rare on mobile
+    // data) that <link> tag never resolves, so we cap the wait at ~1.2s.
+    // If it doesn't land in time, fall back to "Arial Black" — a real
+    // black-weight font built into essentially every Windows desktop —
+    // instead of asking for weight 900 on plain Arial, which has no black
+    // face and silently renders as a thin synthetic bold.
+    const FONT_TIMEOUT_MS = 1200;
+    let robotoReady = false;
+    try{
+      await Promise.race([
+        document.fonts.load('900 100px "Roboto"').then(() => document.fonts.ready),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('font timeout')), FONT_TIMEOUT_MS))
+      ]);
+      robotoReady = document.fonts.check('900 100px "Roboto"');
+    }catch(fontErr){
+      robotoReady = false;
+    }
+    const fontStack = robotoReady ? '"Roboto", "Arial Black", sans-serif' : '"Arial Black", sans-serif';
+
+    const { code, label } = await resolveCountry(q);
+    const flagImg = await loadImageEl(`https://flagcdn.com/w640/${code}.png`);
+    const dataUrl = createFlagLabelDataUrl(flagImg, label, fontStack);
+    images.push({ id: nextId++, src: dataUrl, ratio: FLAG_LABEL_W / FLAG_LABEL_H, qty: 1 });
+    render();
+    genStatus.style.color = '#69db7c';
+    genStatus.textContent = `สร้างป้าย "${label}" สำเร็จ`;
+    countryInput.value = '';
+  }catch(err){
+    genStatus.style.color = '#ff8787';
+    genStatus.textContent = 'ไม่พบประเทศนี้ หรือโหลดธงไม่สำเร็จ ลองพิมพ์ชื่อภาษาอังกฤษ เช่น Thailand, Brazil';
+  }finally{
+    genBtn.disabled = false;
+    genBtn.textContent = originalBtnText;
+  }
+}
+
+genBtn.addEventListener('click', handleGenerateFlagLabel);
+countryInput.addEventListener('keydown', (e) => {
+  const isOpen = acDropdown.classList.contains('show');
+  if(isOpen && e.key === 'ArrowDown'){
+    e.preventDefault();
+    acSetActive(Math.min(acActiveIndex + 1, acMatches.length - 1));
+  } else if(isOpen && e.key === 'ArrowUp'){
+    e.preventDefault();
+    acSetActive(Math.max(acActiveIndex - 1, 0));
+  } else if(e.key === 'Enter'){
+    if(isOpen && acActiveIndex >= 0){
+      e.preventDefault();
+      acChoose(acMatches[acActiveIndex]);
+    } else {
+      acHide();
+      handleGenerateFlagLabel();
+    }
+  } else if(e.key === 'Escape'){
+    acHide();
+  }
+});
+
+// A4 portrait usable area (mm), matching CSS variables above
+const PAGE_W = 210;
+const PAGE_H = 297;
+const MARGIN = 6;
+const GAP = 0.5;
+
+fileInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  if(files.length === 0) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        images.push({ id: nextId++, src: ev.target.result, ratio: img.naturalWidth / img.naturalHeight, qty: 1 });
+        render();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  fileInput.value = '';
+});
+
+clearBtn.addEventListener('click', () => {
+  if(images.length === 0) return;
+  if(confirm('ล้างรูปทั้งหมด (' + images.length + ' รูป) ออกจากรายการ ใช่หรือไม่?')){
+    images = [];
+    render();
+  }
+});
+
+printBtn.addEventListener('click', () => {
+  window.print();
+});
+
+function removeImage(id){
+  images = images.filter(im => im.id !== id);
+  render();
+}
+
+function removeOneInstance(id){
+  const im = images.find(x => x.id === id);
+  if(!im) return;
+  if(im.qty <= 1){
+    images = images.filter(x => x.id !== id);
+  }else{
+    im.qty -= 1;
+  }
+  render();
+}
+
+function setQty(id, qty){
+  const im = images.find(x => x.id === id);
+  if(!im) return;
+  qty = Math.max(1, Math.min(999, parseInt(qty) || 1));
+  im.qty = qty;
+  render();
+}
+
+function renderManageList(){
+  manageList.innerHTML = '';
+  images.forEach((im, i) => {
+    const item = document.createElement('div');
+    item.className = 'manage-item';
+
+    const badge = document.createElement('span');
+    badge.className = 'orderbadge';
+    badge.textContent = i + 1;
+    item.appendChild(badge);
+
+    const thumb = document.createElement('img');
+    thumb.src = im.src;
+    item.appendChild(thumb);
+
+    const qtyrow = document.createElement('div');
+    qtyrow.className = 'qtyrow';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.textContent = '−';
+    minusBtn.onclick = () => setQty(im.id, im.qty - 1);
+
+    const qtyInput = document.createElement('input');
+    qtyInput.type = 'number';
+    qtyInput.min = '1';
+    qtyInput.value = im.qty;
+    qtyInput.onchange = (e) => setQty(im.id, e.target.value);
+
+    const plusBtn = document.createElement('button');
+    plusBtn.textContent = '+';
+    plusBtn.onclick = () => setQty(im.id, im.qty + 1);
+
+    qtyrow.appendChild(minusBtn);
+    qtyrow.appendChild(qtyInput);
+    qtyrow.appendChild(plusBtn);
+    item.appendChild(qtyrow);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delbtn';
+    delBtn.textContent = 'ลบรูปนี้';
+    delBtn.onclick = () => {
+      if(confirm('ลบรูปนี้ออกจากรายการ (ทุกจำนวนที่ตั้งไว้) ใช่หรือไม่?')){
+        removeImage(im.id);
+      }
+    };
+    item.appendChild(delBtn);
+
+    manageList.appendChild(item);
+  });
+}
+
+function render(){
+  const cols = 3;
+  document.documentElement.style.setProperty('--cols', cols);
+
+  renderManageList();
+
+  // expand images according to qty
+  const expanded = [];
+  images.forEach(im => {
+    for(let i = 0; i < im.qty; i++){
+      expanded.push(im);
+    }
+  });
+
+  countText.textContent = expanded.length
+    ? `${expanded.length} ดวง (${images.length} รูป)`
+    : 'ยังไม่มีรูป';
+  emptyHint.style.display = images.length ? 'none' : 'block';
+
+  // compute cell width available (mm)
+  const cellW = (PAGE_W - 2*MARGIN - (cols-1)*GAP) / cols;
+  const usableH = PAGE_H - 2*MARGIN;
+
+  // Remove previously rendered .page elements only — emptyHint now lives
+  // inside #pages too, and must survive this refresh.
+  pagesEl.querySelectorAll('.page').forEach(el => el.remove());
+  if(expanded.length === 0) return;
+
+  let idx = 0;
+  let pageNum = 0;
+  while(idx < expanded.length){
+    pageNum++;
+    const page = document.createElement('div');
+    page.className = 'page';
+
+    // fill this page: go row by row, stop when adding next row would overflow height
+    let usedH = 0;
+    let firstRow = true;
+    while(idx < expanded.length){
+      // build one row (up to `cols` images), row height = max height needed by images in that row
+      const rowImgs = expanded.slice(idx, idx + cols);
+      const rowHeights = rowImgs.map(im => cellW / im.ratio);
+      const rowH = Math.max(...rowHeights);
+      const neededH = usedH + rowH + (firstRow ? 0 : GAP);
+      if(neededH > usableH && !firstRow) break; // stop, next page
+      // place row
+      rowImgs.forEach((im) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.height = rowH + 'mm';
+        const imgEl = document.createElement('img');
+        imgEl.src = im.src;
+        cell.appendChild(imgEl);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove';
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'ลบดวงนี้';
+        removeBtn.onclick = () => removeOneInstance(im.id);
+        cell.appendChild(removeBtn);
+        page.appendChild(cell);
+      });
+      // fill remaining columns in the row with empty placeholders to keep grid alignment (screen only)
+      for(let i = rowImgs.length; i < cols; i++){
+        const spacer = document.createElement('div');
+        spacer.style.height = rowH + 'mm';
+        page.appendChild(spacer);
+      }
+      idx += rowImgs.length;
+      usedH = neededH;
+      firstRow = false;
+      if(idx >= expanded.length) break;
+    }
+
+    const num = document.createElement('div');
+    num.className = 'pagenum';
+    num.textContent = 'หน้า ' + pageNum;
+    page.appendChild(num);
+
+    pagesEl.appendChild(page);
+  }
+}
+
+render();
+
+// --- Collapsible sidebar (.manage) ---
+// Desktop: pushes the page preview aside, so it starts OPEN and can be
+// collapsed to reclaim width. Mobile (<=768px, see CSS): the sidebar is
+// too wide to share space with the A4 preview without squeezing/
+// overlapping it, so there it becomes an off-canvas drawer that starts
+// CLOSED and slides over the preview (with a dim backdrop) when opened.
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+// The single ‹/› toggle button — a real child of .manage-header (see
+// markup + CSS). It is never a separate fixed-position element, so there
+// is nothing to keep in sync: wherever the header goes, the tab goes,
+// automatically, every frame of every transition.
+const sidebarToggleTab = document.getElementById('sidebarToggleTab');
+
+function isMobileLayout(){
+  return window.matchMedia('(max-width:768px)').matches;
+}
+
+function setSidebarOpen(open){
+  manageWrap.classList.toggle('open', open);
+  sidebarBackdrop.classList.toggle('show', open && isMobileLayout());
+  sidebarToggleTab.textContent = open ? '‹' : '›';
+  sidebarToggleTab.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+setSidebarOpen(!isMobileLayout()); // open by default on desktop, closed on mobile
+
+sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+sidebarToggleTab.addEventListener('click', () => {
+  setSidebarOpen(!manageWrap.classList.contains('open'));
+});
+
+// The sidebar (.manage) needs to stick right below the toolbar + autodesign
+// bar, whose combined height varies with font rendering/wrapping. Measure
+// it for real instead of guessing a fixed px value, and keep it in sync if
+// the toolbar wraps to more lines (narrow window, zoom, etc).
+function updateHeaderHeight(){
+  const toolbar = document.querySelector('.toolbar');
+  const autodesign = document.querySelector('.autodesign');
+  const th = toolbar ? toolbar.offsetHeight : 0;
+  const h = th + (autodesign ? autodesign.offsetHeight : 0);
+  document.documentElement.style.setProperty('--toolbar-h', th + 'px');
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+updateHeaderHeight();
+window.addEventListener('resize', () => {
+  updateHeaderHeight();
+  // keep backdrop in sync if the window crosses the mobile breakpoint
+  // while the sidebar happens to be open (e.g. rotating a tablet)
+  sidebarBackdrop.classList.toggle('show', manageWrap.classList.contains('open') && isMobileLayout());
+});
+
+// --- Shrink the header bar on scroll ---
+// Once the page is scrolled down, the toolbar collapses to about half its
+// height (smaller padding/title) to free up screen space. It expands back
+// once scrolled back near the top. The sidebar/edge-tab positions read
+// --header-h, which the ResizeObserver above keeps in sync automatically
+// as the toolbar's real height changes during the transition.
+const toolbarEl = document.querySelector('.toolbar');
+let headerShrunk = false;
+function updateHeaderShrink(){
+  const shouldShrink = window.scrollY > 24;
+  if(shouldShrink !== headerShrunk){
+    headerShrunk = shouldShrink;
+    toolbarEl.classList.toggle('shrink', headerShrunk);
+  }
+}
+window.addEventListener('scroll', updateHeaderShrink, { passive:true });
+updateHeaderShrink();
+if(window.ResizeObserver){
+  const ro = new ResizeObserver(updateHeaderHeight);
+  const tb = document.querySelector('.toolbar');
+  const ad = document.querySelector('.autodesign');
+  if(tb) ro.observe(tb);
+  if(ad) ro.observe(ad);
+}
+
+// Fallback: block the pull-to-refresh swipe gesture when at the very top
+// of the page (overscroll-behavior above isn't respected by every mobile
+// browser build, so guard it here too).
+let ptrStartY = null;
+document.addEventListener('touchstart', (e) => {
+  ptrStartY = e.touches.length === 1 ? e.touches[0].clientY : null;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if(ptrStartY === null || e.touches.length !== 1) return;
+  const dy = e.touches[0].clientY - ptrStartY;
+  const scroller = e.target.closest('.autodesign, .ac-dropdown, .manage');
+  // Only block the downward pull when the page itself is scrolled to the
+  // top and the gesture isn't happening inside a horizontally-scrolling
+  // toolbar or dropdown (those still need their own touch handling).
+  if(dy > 0 && window.scrollY <= 0 && !scroller){
+    e.preventDefault();
+  }
+}, { passive: false });
+</script>
+
+</body>
+</html>
