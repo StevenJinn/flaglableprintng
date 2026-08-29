@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<!-- ===== Auto cache-buster =====
+     GitHub Pages doesn't let us control HTTP cache headers, so browsers
+     (and mobile Chrome especially) can keep serving an old cached copy of
+     this page after it's updated on GitHub. This script forces every
+     plain visit (no ?_v= param yet) to redirect once to a URL with a
+     fresh timestamp, which browsers always treat as a brand-new resource
+     and fetch over the network instead of from cache. -->
+<script>
+(function(){
+  try{
+    // Only cache-bust on a real website (http/https). On a locally opened
+    // file (file:// or an Android content:// URI from Downloads/Files),
+    // rewriting the URL with a query string can fail to resolve and the
+    // page won't open at all — so skip entirely in that case.
+    if(!/^https?:$/.test(window.location.protocol)) return;
+    var url = new URL(window.location.href);
+    if(!url.searchParams.has('_v')){
+      url.searchParams.set('_v', Date.now());
+      window.location.replace(url.toString());
+    }
+  }catch(e){ /* older browsers without URL API: just skip busting */ }
+})();
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
+  }).catch(function(){});
+}
+</script>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>พิมพ์ป้ายธง (Label Print A4)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@900&display=block" rel="stylesheet">
+<style>
+  :root{
+    --page-w: 210mm;
+    --page-h: 297mm;
+    --margin: 6mm;
+    --gap: 0.5mm;
+    --cols: 3;
+  }
+  *{box-sizing:border-box;}
+  html{
+    overscroll-behavior-y: contain;
+  }
+  body{
+    font-family: "Segoe UI", "Tahoma", sans-serif;
+    background:#e9ecef;
+    margin:0;
+    padding:0;
+    color:#212529;
+    overscroll-behavior-y: contain;
+  }
+  .toolbar{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:#212529;
+    color:#fff;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+  }
+  .toolbar h1{
+    font-size:26px;
+    margin:0;
+    font-weight:600;
+  }
+  label.filebtn{
+    background:#495057;
+    padding:8px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+    transition:.15s;
+    border:1px solid #6c757d;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  label.filebtn:hover{background:#5a6268;}
+  input[type=file]{display:none;}
+  .autodesign > button, .toolbar > button{
+    background:#0d6efd;
+    color:#fff;
+    border:none;
+    padding:9px 18px;
+    border-radius:6px;
+    font-size:14px;
+    cursor:pointer;
+    font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .autodesign > button.secondary{
+    background:#6c757d;
+  }
+  .autodesign > button:hover, .toolbar > button:hover{filter:brightness(1.1);}
+  .count{
+    font-size:13px;
+    color:#ced4da;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .settings{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    background:#343a40;
+    padding:6px 10px;
+    border-radius:6px;
+  }
+  .settings input[type=number]{
+    width:55px;
+    padding:3px 5px;
+    border-radius:4px;
+    border:1px solid #999;
+  }
+  .empty-hint{
+    text-align:center;
+    padding:80px 20px;
+    color:#868e96;
+    font-size:15px;
+  }
+  .manage{
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap:12px;
+    padding:16px 20px;
+    background:#dee2e6;
+    border-bottom:1px solid #ced4da;
+  }
+  .manage-item{
+    background:#fff;
+    border:1px solid #ccc;
+    border-radius:8px;
+    padding:8px;
+    width:100%;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.15);
+  }
+  .manage-item img{
+    width:100%;
+    height:60px;
+    object-fit:contain;
+    border:1px solid #eee;
+    background:#fafafa;
+  }
+  .manage-item .qtyrow{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+  }
+  .manage-item .qtyrow button{
+    width:22px;
+    height:22px;
+    border-radius:4px;
+    border:1px solid #adb5bd;
+    background:#f1f3f5;
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+    padding:0;
+  }
+  .manage-item .qtyrow button:hover{background:#e9ecef;}
+  .manage-item .qtyrow input{
+    width:42px;
+    text-align:center;
+    padding:3px 2px;
+    border-radius:4px;
+    border:1px solid #adb5bd;
+  }
+  .manage-item .delbtn{
+    background:#dc3545;
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    font-size:12px;
+    padding:3px 8px;
+    cursor:pointer;
+  }
+  .manage-item .delbtn:hover{filter:brightness(1.1);}
+  .pages{
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:24px;
+  }
+  .page{
+    background:#fff;
+    width:var(--page-w);
+    height:var(--page-h);
+    box-shadow:0 0 8px rgba(0,0,0,.3);
+    padding:var(--margin);
+    display:grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap:var(--gap);
+    align-content:start;
+    position:relative;
+  }
+  .page .pagenum{
+    position:absolute;
+    bottom:2mm;
+    right:4mm;
+    font-size:8px;
+    color:#ccc;
+  }
+  .cell{
+    position:relative;
+    overflow:hidden;
+    border:1px dashed #ccc;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .cell img{
+    width:100%;
+    height:100%;
+    object-fit:fill;
+    display:block;
+  }
+  .cell .remove{
+    position:absolute;
+    top:3px;
+    right:3px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:rgba(220,53,69,.85);
+    color:#fff;
+    border:none;
+    font-size:13px;
+    line-height:20px;
+    text-align:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .cell:hover .remove{display:block;}
+  .cell .remove{display:none;}
+
+  .autodesign{
+    position:sticky;
+    top:46px;
+    z-index:9;
+    background:#212529;
+    border-top:1px solid #343a40;
+    color:#fff;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .autodesign .adlabel{
+    font-size:14px;
+    font-weight:600;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .autodesign input[type=text]{
+    width:100%;
+    padding:8px 10px;
+    border-radius:6px;
+    border:1px solid #6c757d;
+    font-size:14px;
+  }
+  .ac-wrap{
+    position:relative;
+    flex:0 0 220px;
+  }
+  .ac-dropdown{
+    display:none;
+    position:fixed;
+    margin-top:4px;
+    background:#2b3035;
+    border:1px solid #495057;
+    border-radius:6px;
+    max-height:260px;
+    overflow-y:auto;
+    z-index:1000;
+    box-shadow:0 6px 16px rgba(0,0,0,.45);
+  }
+  .ac-dropdown.show{display:block;}
+  .ac-item{
+    padding:8px 12px;
+    font-size:14px;
+    color:#e9ecef;
+    cursor:pointer;
+  }
+  .ac-item mark{
+    background:transparent;
+    color:#ffd43b;
+    font-weight:700;
+  }
+  .ac-item:hover,
+  .ac-item.active{
+    background:#495057;
+  }
+  #genBtn{
+    background:#fd7e14;
+    color:#fff;
+    border:none;
+    padding:9px 18px;
+    border-radius:6px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #genBtn:hover{filter:brightness(1.08);}
+  #genBtn:disabled{opacity:.6;cursor:default;filter:none;}
+  .redslider-wrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#343a40;
+    padding:6px 12px;
+    border-radius:6px;
+    flex-shrink:0;
+  }
+  .redslider-wrap .adlabel{
+    color:#ff8787;
+  }
+  .redslider-wrap input[type=range]{
+    width:110px;
+    accent-color:#dc3545;
+    cursor:pointer;
+  }
+  .redslider-wrap span#redBoostValue{
+    font-size:13px;
+    color:#ced4da;
+    width:26px;
+    text-align:right;
+    flex-shrink:0;
+  }
+  .autodesign .genstatus{
+    font-size:13px;
+    color:#ced4da;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+
+  @media print{
+    body{background:#fff;}
+    .toolbar{display:none;}
+    .autodesign{display:none;}
+    .manage{display:none;}
+    .empty-hint{display:none;}
+    .pages{padding:0;gap:0;}
+    .page{
+      box-shadow:none;
+      margin:0;
+      page-break-after: always;
+      border:none;
+    }
+    .cell{border:1px dashed #aaa;}
+    .cell .remove{display:none !important;}
+    .pagenum{display:none;}
+  }
+  @page{
+    size: A4 portrait;
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>🏷️ Flag Lable Printer</h1>
+</div>
+
+<div class="autodesign">
+  <span class="adlabel">🎨 พิมพ์ชื่อประเทศ:</span>
+  <div class="ac-wrap">
+    <input type="text" id="countryInput" placeholder="พิมพ์ชื่อประเทศ เช่น Brazil, Thailand" autocomplete="off">
+    <div class="ac-dropdown" id="acDropdown"></div>
+  </div>
+  <button id="genBtn">✨ สร้างป้าย</button>
+
+  <div class="redslider-wrap">
+    <span class="adlabel">🔴 ความเข้มสีแดง:</span>
+    <input type="range" id="redBoostSlider" min="0" max="100" value="70">
+    <span id="redBoostValue">70</span>
+  </div>
+
+  <label class="filebtn">
+    📁 Custom Flag
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </label>
+
+  <button class="secondary" id="clearBtn">ล้างทั้งหมด</button>
+  <button id="printBtn">🖨️ พิมพ์</button>
+
+  <span class="count" id="countText" style="display:none;">ยังไม่มีรูป</span>
+  <span class="genstatus" id="genStatus" style="display:none;"></span>
+</div>
+
+<div id="emptyHint" class="empty-hint">
+  ยังไม่มีรูปภาพ — กดปุ่ม "เลือกรูปภาพ" ด้านบนเพื่อนำเข้ารูปป้ายธง (เลือกได้หลายไฟล์พร้อมกัน)<br>
+  หลังนำเข้าแล้วสามารถแก้ไข "จำนวนดวง" ของแต่ละรูปได้จากแผงด้านล่างนี้ ระบบจะจัดวาง 3 ดวงต่อแถว เต็มความยาวหน้ากระดาษ A4 แนวตั้งโดยอัตโนมัติ
+  ความสูงของแต่ละดวงคำนวณตามสัดส่วนภาพต้นฉบับ
+</div>
+
+<div class="manage" id="manageList"></div>
+
+<div class="pages" id="pages"></div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const pagesEl = document.getElementById('pages');
+const emptyHint = document.getElementById('emptyHint');
+const countText = document.getElementById('countText');
+const clearBtn = document.getElementById('clearBtn');
+const printBtn = document.getElementById('printBtn');
+const manageList = document.getElementById('manageList');
+const countryInput = document.getElementById('countryInput');
+const acDropdown = document.getElementById('acDropdown');
+const genBtn = document.getElementById('genBtn');
+const redBoostSlider = document.getElementById('redBoostSlider');
+const redBoostValue = document.getElementById('redBoostValue');
+redBoostSlider.addEventListener('input', () => {
+  redBoostValue.textContent = redBoostSlider.value;
+});
+const genStatus = document.getElementById('genStatus');
+
+// Static offline list of common country names for the autocomplete dropdown
+// (doesn't depend on the countries.dev API being reachable while typing).
+const COUNTRY_NAMES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+  "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
+  "Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria",
+  "Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada",
+  "Central African Republic","Chad","Chile","China","Colombia","Comoros",
+  "Congo","Costa Rica","Croatia","Cuba","Cyprus","Czechia","DR Congo",
+  "Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt",
+  "El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini",
+  "Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany",
+  "Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana",
+  "Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq",
+  "Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan",
+  "Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia",
+  "Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania",
+  "Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta",
+  "Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia",
+  "Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique",
+  "Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand",
+  "Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway",
+  "Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea",
+  "Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania",
+  "Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia",
+  "Saint Vincent and the Grenadines","Samoa","San Marino",
+  "Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles",
+  "Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands",
+  "Somalia","South Africa","South Korea","South Sudan","Spain",
+  "Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan",
+  "Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+  "Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu",
+  "Uganda","Ukraine","United Arab Emirates","United Kingdom","USA",
+  "Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam",
+  "Yemen","Zambia","Zimbabwe"
+];
+
+let acActiveIndex = -1;
+let acMatches = [];
+
+function acEscapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function acPositionDropdown(){
+  const r = countryInput.getBoundingClientRect();
+  acDropdown.style.left = r.left + 'px';
+  acDropdown.style.top = (r.bottom + 4) + 'px';
+  acDropdown.style.width = r.width + 'px';
+}
+
+function acRender(query){
+  const q = query.trim().toLowerCase();
+  if(!q){ acHide(); return; }
+  const starts = [], contains = [];
+  for(const name of COUNTRY_NAMES){
+    const idx = name.toLowerCase().indexOf(q);
+    if(idx === 0) starts.push(name);
+    else if(idx > 0) contains.push(name);
+  }
+  acMatches = [...starts, ...contains].slice(0, 8);
+  acActiveIndex = -1;
+  if(acMatches.length === 0){ acHide(); return; }
+
+  acDropdown.innerHTML = acMatches.map(name => {
+    const idx = name.toLowerCase().indexOf(q);
+    const highlighted = idx === -1 ? acEscapeHtml(name) :
+      acEscapeHtml(name.slice(0, idx)) + '<mark>' + acEscapeHtml(name.slice(idx, idx + q.length)) + '</mark>' + acEscapeHtml(name.slice(idx + q.length));
+    return `<div class="ac-item" data-name="${acEscapeHtml(name)}">${highlighted}</div>`;
+  }).join('');
+  acPositionDropdown();
+  acDropdown.classList.add('show');
+}
+
+function acHide(){
+  acDropdown.classList.remove('show');
+  acDropdown.innerHTML = '';
+  acMatches = [];
+  acActiveIndex = -1;
+}
+
+function acSetActive(index){
+  const items = acDropdown.querySelectorAll('.ac-item');
+  items.forEach(el => el.classList.remove('active'));
+  if(index >= 0 && index < items.length){
+    items[index].classList.add('active');
+    items[index].scrollIntoView({ block: 'nearest' });
+  }
+  acActiveIndex = index;
+}
+
+function acChoose(name){
+  countryInput.value = name;
+  acHide();
+  countryInput.focus();
+}
+
+countryInput.addEventListener('input', () => acRender(countryInput.value));
+countryInput.addEventListener('focus', () => { if(countryInput.value.trim()) acRender(countryInput.value); });
+
+acDropdown.addEventListener('mousedown', (e) => {
+  const item = e.target.closest('.ac-item');
+  if(item) acChoose(item.dataset.name);
+});
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.ac-wrap') && !e.target.closest('.ac-dropdown')) acHide();
+});
+
+// Keep the dropdown anchored to the input if the toolbar row (or page) scrolls/resizes.
+document.querySelector('.autodesign').addEventListener('scroll', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+});
+window.addEventListener('scroll', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+}, true);
+window.addEventListener('resize', () => {
+  if(acDropdown.classList.contains('show')) acPositionDropdown();
+});
+
+
+let images = []; // {id, src, ratio, qty}
+let nextId = 1;
+
+/* ===================== Auto Flag Label Designer =====================
+   Replicates the reference design (see "Product of RUSSIA" sample):
+   - Flag photo tilted ~-6° and cropped by the natural rotated silhouette
+     against a black background (no extra clip mask needed).
+   - "Product" / "of" stacked in bold white, then the country name in
+     large bold red with a white outline — all three lines right-aligned
+     to the same right margin so long names shrink-to-fit instead of
+     overflowing the label.
+======================================================================= */
+const FLAG_LABEL_W = 980;
+const FLAG_LABEL_H = 429;
+const FLAG_TILT_DEG = -5.95; // matches the rotation used in the reference labels
+
+function loadImageEl(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('flag image failed to load'));
+    img.src = src;
+  });
+}
+
+// Many flag source PNGs render "red" as a muted brick/maroon tone rather
+// than a true vivid red. This selectively punches up ONLY the reddish
+// pixels (red channel clearly dominant over green/blue) so flag reds print
+// vivid, while leaving whites, blues, greens, yellows, and blacks
+// untouched — unlike a global saturation/contrast filter which skews every
+// color at once. `level` (0-100, from the red-intensity slider) controls
+// how strong the boost is: 0 = untouched original, 100 = maximum punch.
+function boostFlagReds(img, level){
+  const off = document.createElement('canvas');
+  off.width = img.naturalWidth;
+  off.height = img.naturalHeight;
+  const octx = off.getContext('2d');
+  octx.drawImage(img, 0, 0);
+
+  if(!level || level <= 0) return off; // slider at 0: leave colors as-is
+
+  const t = Math.max(0, Math.min(100, level)) / 100;
+  const rMult = 1 + t * 0.45;   // up to 1.45x red at level 100
+  const gbMult = 1 - t * 0.70;  // down to 0.30x green/blue at level 100
+
+  const idata = octx.getImageData(0, 0, off.width, off.height);
+  const d = idata.data;
+  for(let i = 0; i < d.length; i += 4){
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    // Only touch pixels where red is clearly the dominant channel
+    // (i.e. actually a "red" pixel, not orange/pink/skin-ish tones).
+    if(r > g + 25 && r > b + 25){
+      d[i] = Math.min(255, r * rMult);
+      d[i + 1] = g * gbMult;
+      d[i + 2] = b * gbMult;
+    }
+  }
+  octx.putImageData(idata, 0, 0);
+  return off;
+}
+
+// countries.dev only exposes one "name" field, and for a number of
+// countries that's the long official/formal name (e.g. "Lao People's
+// Democratic Republic", "Russian Federation") rather than the short common
+// name people actually put on a product label ("Laos", "Russia"). This maps
+// those official names down to the common short name for the label text —
+// the API is still used as-is for search/matching and the flag code.
+const COMMON_NAME_OVERRIDES = {
+  "united states of america": "USA",
+  "russian federation": "Russia",
+  "lao people's democratic republic": "Laos",
+  "republic of korea": "South Korea",
+  "democratic people's republic of korea": "North Korea",
+  "united kingdom of great britain and northern ireland": "United Kingdom",
+  "islamic republic of iran": "Iran",
+  "iran (islamic republic of)": "Iran",
+  "bolivarian republic of venezuela": "Venezuela",
+  "plurinational state of bolivia": "Bolivia",
+  "syrian arab republic": "Syria",
+  "socialist republic of vietnam": "Vietnam",
+  "brunei darussalam": "Brunei",
+  "united republic of tanzania": "Tanzania",
+  "democratic republic of the congo": "DR Congo",
+  "republic of the congo": "Congo",
+  "kingdom of the netherlands": "Netherlands",
+  "federal democratic republic of ethiopia": "Ethiopia",
+  "federal republic of nigeria": "Nigeria",
+  "arab republic of egypt": "Egypt",
+  "kingdom of saudi arabia": "Saudi Arabia",
+  "united mexican states": "Mexico",
+  "federative republic of brazil": "Brazil",
+  "argentine republic": "Argentina",
+  "people's republic of china": "China",
+  "republic of the union of myanmar": "Myanmar",
+  "independent state of papua new guinea": "Papua New Guinea",
+  "hellenic republic": "Greece",
+  "swiss confederation": "Switzerland",
+  "kingdom of thailand": "Thailand",
+  "republic of india": "India",
+  "republic of indonesia": "Indonesia",
+  "republic of the philippines": "Philippines",
+  "co-operative republic of guyana": "Guyana",
+  "oriental republic of uruguay": "Uruguay",
+  "republic of poland": "Poland",
+  "italian republic": "Italy",
+  "portuguese republic": "Portugal",
+  "kingdom of spain": "Spain",
+  "french republic": "France",
+  "federal republic of germany": "Germany",
+  "kingdom of belgium": "Belgium",
+  "republic of austria": "Austria",
+  "czech republic": "Czechia",
+  "slovak republic": "Slovakia",
+  "republic of ireland": "Ireland",
+  "grand duchy of luxembourg": "Luxembourg",
+  "principality of monaco": "Monaco",
+  "republic of iraq": "Iraq",
+  "state of israel": "Israel",
+  "hashemite kingdom of jordan": "Jordan",
+  "republic of turkey": "Turkey",
+  "republic of south africa": "South Africa",
+  "commonwealth of australia": "Australia",
+  "new zealand": "New Zealand",
+  "japan": "Japan",
+  "republic of chile": "Chile",
+  "republic of colombia": "Colombia",
+  "republic of peru": "Peru",
+  "republic of ecuador": "Ecuador",
+  "republic of paraguay": "Paraguay",
+  "republic of cuba": "Cuba",
+  "dominican republic": "Dominican Republic",
+  "republic of panama": "Panama",
+  "republic of costa rica": "Costa Rica",
+  "republic of guatemala": "Guatemala",
+  "republic of honduras": "Honduras",
+  "republic of el salvador": "El Salvador",
+  "republic of nicaragua": "Nicaragua"
+};
+
+function toCommonName(officialName){
+  const lower = officialName.toLowerCase();
+  if(COMMON_NAME_OVERRIDES[lower]) return COMMON_NAME_OVERRIDES[lower];
+  // Generic fallback for names the override table doesn't explicitly
+  // cover: countries.dev often formats these as "Name (Qualifier)" or
+  // "Name, Qualifier" — e.g. "Iran (Islamic Republic of)" — where the
+  // leading part is already the short common name people expect.
+  const parenIdx = officialName.indexOf(' (');
+  if(parenIdx > 0) return officialName.slice(0, parenIdx);
+  const commaIdx = officialName.indexOf(', ');
+  if(commaIdx > 0) return officialName.slice(0, commaIdx);
+  return officialName;
+}
+
+// countries.dev's search does a plain substring match against each
+// country's stored (often long official) name — e.g. "Laos" fails because
+// it isn't a literal substring of "Lao People's Democratic Republic".
+// For every common name known to trip this up, skip the search entirely
+// and resolve straight to the ISO code + a clean display label.
+const ALIAS_TO_CODE = {
+  'laos': { code: 'la', label: 'Laos' },
+  'iran': { code: 'ir', label: 'Iran' },
+  'usa': { code: 'us', label: 'USA' },
+  'united states': { code: 'us', label: 'USA' },
+  'united states of america': { code: 'us', label: 'USA' },
+  'south korea': { code: 'kr', label: 'South Korea' },
+  'north korea': { code: 'kp', label: 'North Korea' },
+  'dr congo': { code: 'cd', label: 'DR Congo' },
+  'democratic republic of the congo': { code: 'cd', label: 'DR Congo' },
+  'czechia': { code: 'cz', label: 'Czechia' },
+  'czech republic': { code: 'cz', label: 'Czechia' },
+  'mexico': { code: 'mx', label: 'Mexico' },
+  'argentina': { code: 'ar', label: 'Argentina' },
+  'greece': { code: 'gr', label: 'Greece' },
+  'switzerland': { code: 'ch', label: 'Switzerland' },
+  'italy': { code: 'it', label: 'Italy' },
+  'portugal': { code: 'pt', label: 'Portugal' },
+  'france': { code: 'fr', label: 'France' },
+  'slovakia': { code: 'sk', label: 'Slovakia' },
+  'ivory coast': { code: 'ci', label: 'Ivory Coast' },
+  "cote d'ivoire": { code: 'ci', label: 'Ivory Coast' },
+  "côte d'ivoire": { code: 'ci', label: 'Ivory Coast' },
+  'vatican city': { code: 'va', label: 'Vatican City' },
+  'holy see': { code: 'va', label: 'Vatican City' },
+};
+
+async function resolveCountry(query){
+  // restcountries.com's old free v3.1 endpoint was retired, so this uses
+  // countries.dev — a free, keyless, CORS-open replacement with the same data.
+  const q = query.trim();
+  if(!q) throw new Error('empty query');
+  const alias = ALIAS_TO_CODE[q.toLowerCase()];
+  if(alias) return { code: alias.code, label: alias.label };
+  const res = await fetch(`https://countries.dev/name/${encodeURIComponent(q)}`);
+  if(!res.ok) throw new Error('country not found');
+  const data = await res.json();
+  if(!Array.isArray(data) || data.length === 0) throw new Error('country not found');
+  const lower = q.toLowerCase();
+  const match = data.find(d => d.name && d.name.toLowerCase() === lower) || data[0];
+  if(!match.alpha2Code) throw new Error('country code missing');
+  return { code: match.alpha2Code.toLowerCase(), label: toCommonName(match.name) };
+}
+
+// Fit the country name at a fixed TARGET font size — matching the reference
+// "Product of RUSSIA" sample — no matter how long the name is. Long names
+// are simply allowed to extend left and overlap the flag artwork (matching
+// the reference examples like "PHILIPPINES"/"GUATEMALA") rather than being
+// squeezed or shrunk. Only names too wide to fit across the whole label
+// (e.g. "TRINIDAD AND TOBAGO") wrap onto a second line.
+function fitCountryLines(ctx, text, canvasWidth, targetFont, fontStack){
+  ctx.font = `900 ${targetFont}px ${fontStack}`;
+  const maxLineWidth = canvasWidth * 0.98;
+  const w = ctx.measureText(text).width;
+  if(w <= maxLineWidth){
+    return { lines: [text], font: targetFont };
+  }
+
+  // Too wide for even the full label width: wrap to two lines. Split on a
+  // space if there is one; otherwise split the single word roughly in half.
+  let l1, l2, splitW;
+  if(text.includes(' ')){
+    const words = text.split(' ');
+    let best = null;
+    for(let i = 1; i < words.length; i++){
+      const a = words.slice(0, i).join(' ');
+      const b = words.slice(i).join(' ');
+      const w2 = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+      if(!best || w2 < best.w) best = { a, b, w: w2 };
+    }
+    l1 = best.a; l2 = best.b; splitW = best.w;
+  } else {
+    const mid = Math.ceil(text.length / 2);
+    l1 = text.slice(0, mid);
+    l2 = text.slice(mid);
+    splitW = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width);
+  }
+
+  // Only shrink the font if the split lines are literally too wide for the
+  // label (e.g. one very long word with no space to split on). Otherwise
+  // keep the full target size — the overlap is fixed purely by giving the
+  // two baselines enough vertical spacing (see createFlagLabelDataUrl).
+  let font2 = targetFont;
+  if(splitW > maxLineWidth) font2 = targetFont * (maxLineWidth / splitW);
+
+  return { lines: [l1, l2], font: font2 };
+}
+
+function createFlagLabelDataUrl(flagImg, countryLabel, fontStack){
+  const CW = FLAG_LABEL_W, CH = FLAG_LABEL_H;
+  const canvas = document.createElement('canvas');
+  canvas.width = CW;
+  canvas.height = CH;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // --- Tilted flag photo (naturally clipped by its own rotated silhouette) ---
+  const rectW = CW * 0.564;
+  const rectH = CH * 0.862;
+  const cx = CW * 0.28;
+  const cy = CH * 0.44;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(FLAG_TILT_DEG * Math.PI / 180);
+  ctx.beginPath();
+  ctx.rect(-rectW / 2, -rectH / 2, rectW, rectH);
+  ctx.clip();
+  const flagSrc = boostFlagReds(flagImg, parseInt(redBoostSlider.value, 10));
+  const iw = flagSrc.width, ih = flagSrc.height;
+  const scale = Math.max(rectW / iw, rectH / ih);
+  const dw = iw * scale, dh = ih * scale;
+  ctx.drawImage(flagSrc, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+
+  // --- Right-aligned text stack: Product / of / COUNTRY ---
+  const rightEdge = CW * 0.98;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+
+  // Target font tuned to match the reference "Product of RUSSIA" sample.
+  // Long names are allowed to overlap the flag artwork rather than being
+  // squeezed or shrunk (per the reference examples).
+  const { lines, font } = fitCountryLines(
+    ctx, countryLabel.toUpperCase(), CW, CH * 0.30, fontStack
+  );
+  const twoLines = lines.length === 2;
+
+  // When the name wraps to two lines, push "Product / of" up so the whole
+  // stack stays balanced and doesn't crowd the taller two-line name below.
+  ctx.fillStyle = '#fff';
+  ctx.font = `700 ${Math.round(CH * 0.21)}px Arial, "Segoe UI", sans-serif`;
+  ctx.fillText('Product', rightEdge, twoLines ? CH * 0.20 : CH * 0.33);
+  ctx.fillText('of', rightEdge, twoLines ? CH * 0.415 : CH * 0.565);
+
+  ctx.font = `900 ${font}px ${fontStack}`;
+  ctx.lineWidth = font * 0.09;
+  ctx.strokeStyle = '#fff';
+  ctx.fillStyle = '#F60000';
+  ctx.lineJoin = 'round';
+
+  // For 2 lines, anchor the bottom line near the label's bottom edge and
+  // push the top line up just far enough (0.85x font, roughly one cap-height)
+  // that the tall Anton caps of line 2 don't collide with line 1 — without
+  // shrinking the font itself.
+  const baseline2 = CH * 0.92;
+  const baseline1 = baseline2 - font * 0.85;
+  const baselines = twoLines ? [baseline1, baseline2] : [CH * 0.912];
+  lines.forEach((line, i) => {
+    ctx.strokeText(line, rightEdge, baselines[i]);
+    ctx.fillText(line, rightEdge, baselines[i]);
+  });
+
+  return canvas.toDataURL('image/png');
+}
+
+async function handleGenerateFlagLabel(){
+  const q = countryInput.value.trim();
+  if(!q) return;
+  const originalBtnText = genBtn.textContent;
+  genBtn.disabled = true;
+  genBtn.textContent = '⏳ กำลังสร้าง...';
+  genStatus.style.color = '#ced4da';
+  genStatus.textContent = '';
+  try{
+    // Try to fully download the Roboto Black web font before drawing text
+    // to the canvas. On networks that block/slow fonts.googleapis.com or
+    // fonts.gstatic.com (common on Thai office/school Wi-Fi, rare on mobile
+    // data) that <link> tag never resolves, so we cap the wait at ~1.2s.
+    // If it doesn't land in time, fall back to "Arial Black" — a real
+    // black-weight font built into essentially every Windows desktop —
+    // instead of asking for weight 900 on plain Arial, which has no black
+    // face and silently renders as a thin synthetic bold.
+    const FONT_TIMEOUT_MS = 1200;
+    let robotoReady = false;
+    try{
+      await Promise.race([
+        document.fonts.load('900 100px "Roboto"').then(() => document.fonts.ready),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('font timeout')), FONT_TIMEOUT_MS))
+      ]);
+      robotoReady = document.fonts.check('900 100px "Roboto"');
+    }catch(fontErr){
+      robotoReady = false;
+    }
+    const fontStack = robotoReady ? '"Roboto", "Arial Black", sans-serif' : '"Arial Black", sans-serif';
+
+    const { code, label } = await resolveCountry(q);
+    const flagImg = await loadImageEl(`https://flagcdn.com/w640/${code}.png`);
+    const dataUrl = createFlagLabelDataUrl(flagImg, label, fontStack);
+    images.push({ id: nextId++, src: dataUrl, ratio: FLAG_LABEL_W / FLAG_LABEL_H, qty: 1 });
+    render();
+    genStatus.style.color = '#69db7c';
+    genStatus.textContent = `สร้างป้าย "${label}" สำเร็จ`;
+    countryInput.value = '';
+  }catch(err){
+    genStatus.style.color = '#ff8787';
+    genStatus.textContent = 'ไม่พบประเทศนี้ หรือโหลดธงไม่สำเร็จ ลองพิมพ์ชื่อภาษาอังกฤษ เช่น Thailand, Brazil';
+  }finally{
+    genBtn.disabled = false;
+    genBtn.textContent = originalBtnText;
+  }
+}
+
+genBtn.addEventListener('click', handleGenerateFlagLabel);
+countryInput.addEventListener('keydown', (e) => {
+  const isOpen = acDropdown.classList.contains('show');
+  if(isOpen && e.key === 'ArrowDown'){
+    e.preventDefault();
+    acSetActive(Math.min(acActiveIndex + 1, acMatches.length - 1));
+  } else if(isOpen && e.key === 'ArrowUp'){
+    e.preventDefault();
+    acSetActive(Math.max(acActiveIndex - 1, 0));
+  } else if(e.key === 'Enter'){
+    if(isOpen && acActiveIndex >= 0){
+      e.preventDefault();
+      acChoose(acMatches[acActiveIndex]);
+    } else {
+      acHide();
+      handleGenerateFlagLabel();
+    }
+  } else if(e.key === 'Escape'){
+    acHide();
+  }
+});
+
+// A4 portrait usable area (mm), matching CSS variables above
+const PAGE_W = 210;
+const PAGE_H = 297;
+const MARGIN = 6;
+const GAP = 0.5;
+
+fileInput.addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  if(files.length === 0) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        images.push({ id: nextId++, src: ev.target.result, ratio: img.naturalWidth / img.naturalHeight, qty: 1 });
+        render();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  fileInput.value = '';
+});
+
+clearBtn.addEventListener('click', () => {
+  if(images.length === 0) return;
+  if(confirm('ล้างรูปทั้งหมด (' + images.length + ' รูป) ออกจากรายการ ใช่หรือไม่?')){
+    images = [];
+    render();
+  }
+});
+
+printBtn.addEventListener('click', () => {
+  window.print();
+});
+
+function removeImage(id){
+  images = images.filter(im => im.id !== id);
+  render();
+}
+
+function removeOneInstance(id){
+  const im = images.find(x => x.id === id);
+  if(!im) return;
+  if(im.qty <= 1){
+    images = images.filter(x => x.id !== id);
+  }else{
+    im.qty -= 1;
+  }
+  render();
+}
+
+function setQty(id, qty){
+  const im = images.find(x => x.id === id);
+  if(!im) return;
+  qty = Math.max(1, Math.min(999, parseInt(qty) || 1));
+  im.qty = qty;
+  render();
+}
+
+function renderManageList(){
+  manageList.innerHTML = '';
+  images.forEach(im => {
+    const item = document.createElement('div');
+    item.className = 'manage-item';
+
+    const thumb = document.createElement('img');
+    thumb.src = im.src;
+    item.appendChild(thumb);
+
+    const qtyrow = document.createElement('div');
+    qtyrow.className = 'qtyrow';
+
+    const minusBtn = document.createElement('button');
+    minusBtn.textContent = '−';
+    minusBtn.onclick = () => setQty(im.id, im.qty - 1);
+
+    const qtyInput = document.createElement('input');
+    qtyInput.type = 'number';
+    qtyInput.min = '1';
+    qtyInput.value = im.qty;
+    qtyInput.onchange = (e) => setQty(im.id, e.target.value);
+
+    const plusBtn = document.createElement('button');
+    plusBtn.textContent = '+';
+    plusBtn.onclick = () => setQty(im.id, im.qty + 1);
+
+    qtyrow.appendChild(minusBtn);
+    qtyrow.appendChild(qtyInput);
+    qtyrow.appendChild(plusBtn);
+    item.appendChild(qtyrow);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delbtn';
+    delBtn.textContent = 'ลบรูปนี้';
+    delBtn.onclick = () => {
+      if(confirm('ลบรูปนี้ออกจากรายการ (ทุกจำนวนที่ตั้งไว้) ใช่หรือไม่?')){
+        removeImage(im.id);
+      }
+    };
+    item.appendChild(delBtn);
+
+    manageList.appendChild(item);
+  });
+}
+
+function render(){
+  const cols = 3;
+  document.documentElement.style.setProperty('--cols', cols);
+
+  renderManageList();
+
+  // expand images according to qty
+  const expanded = [];
+  images.forEach(im => {
+    for(let i = 0; i < im.qty; i++){
+      expanded.push(im);
+    }
+  });
+
+  countText.textContent = expanded.length
+    ? `${expanded.length} ดวง (${images.length} รูป)`
+    : 'ยังไม่มีรูป';
+  emptyHint.style.display = images.length ? 'none' : 'block';
+
+  // compute cell width available (mm)
+  const cellW = (PAGE_W - 2*MARGIN - (cols-1)*GAP) / cols;
+  const usableH = PAGE_H - 2*MARGIN;
+
+  pagesEl.innerHTML = '';
+  if(expanded.length === 0) return;
+
+  let idx = 0;
+  let pageNum = 0;
+  while(idx < expanded.length){
+    pageNum++;
+    const page = document.createElement('div');
+    page.className = 'page';
+
+    // fill this page: go row by row, stop when adding next row would overflow height
+    let usedH = 0;
+    let firstRow = true;
+    while(idx < expanded.length){
+      // build one row (up to `cols` images), row height = max height needed by images in that row
+      const rowImgs = expanded.slice(idx, idx + cols);
+      const rowHeights = rowImgs.map(im => cellW / im.ratio);
+      const rowH = Math.max(...rowHeights);
+      const neededH = usedH + rowH + (firstRow ? 0 : GAP);
+      if(neededH > usableH && !firstRow) break; // stop, next page
+      // place row
+      rowImgs.forEach((im) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.height = rowH + 'mm';
+        const imgEl = document.createElement('img');
+        imgEl.src = im.src;
+        cell.appendChild(imgEl);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove';
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'ลบดวงนี้';
+        removeBtn.onclick = () => removeOneInstance(im.id);
+        cell.appendChild(removeBtn);
+        page.appendChild(cell);
+      });
+      // fill remaining columns in the row with empty placeholders to keep grid alignment (screen only)
+      for(let i = rowImgs.length; i < cols; i++){
+        const spacer = document.createElement('div');
+        spacer.style.height = rowH + 'mm';
+        page.appendChild(spacer);
+      }
+      idx += rowImgs.length;
+      usedH = neededH;
+      firstRow = false;
+      if(idx >= expanded.length) break;
+    }
+
+    const num = document.createElement('div');
+    num.className = 'pagenum';
+    num.textContent = 'หน้า ' + pageNum;
+    page.appendChild(num);
+
+    pagesEl.appendChild(page);
+  }
+}
+
+render();
+
+// Fallback: block the pull-to-refresh swipe gesture when at the very top
+// of the page (overscroll-behavior above isn't respected by every mobile
+// browser build, so guard it here too).
+let ptrStartY = null;
+document.addEventListener('touchstart', (e) => {
+  ptrStartY = e.touches.length === 1 ? e.touches[0].clientY : null;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if(ptrStartY === null || e.touches.length !== 1) return;
+  const dy = e.touches[0].clientY - ptrStartY;
+  const scroller = e.target.closest('.autodesign, .ac-dropdown, .manage');
+  // Only block the downward pull when the page itself is scrolled to the
+  // top and the gesture isn't happening inside a horizontally-scrolling
+  // toolbar or dropdown (those still need their own touch handling).
+  if(dy > 0 && window.scrollY <= 0 && !scroller){
+    e.preventDefault();
+  }
+}, { passive: false });
+</script>
+
+</body>
+</html>
